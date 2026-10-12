@@ -17,7 +17,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"mime/multipart"
 	"net/http"
+	"os"
 	"time"
 )
 
@@ -31,6 +33,7 @@ type Client struct {
 	Chat   *ChatService
 	Models *ModelsService
 	Usage  *UsageService
+	Files  *FilesService
 }
 
 // NewClient creates a new MeeDoo AI client.
@@ -49,6 +52,7 @@ func NewClientWithBaseURL(apiKey, baseURL string) *Client {
 	c.Chat = &ChatService{client: c}
 	c.Models = &ModelsService{client: c}
 	c.Usage = &UsageService{client: c}
+	c.Files = &FilesService{client: c}
 	return c
 }
 
@@ -130,6 +134,29 @@ func (c *Client) GetConfig() (map[string]interface{}, error) {
 	return result, json.Unmarshal(data, &result)
 }
 
+func (c *Client) parseError(statusCode int, body []byte) error {
+	var errBody struct {
+		Detail string `json:"detail"`
+	}
+	_ = json.Unmarshal(body, &errBody)
+	detail := errBody.Detail
+	if detail == "" {
+		detail = string(body)
+	}
+	switch {
+	case statusCode == 401:
+		return &AuthenticationError{Message: detail}
+	case statusCode == 429:
+		return &RateLimitError{Message: detail}
+	case contains(detail, "Insufficient API credits"):
+		return &InsufficientCreditsError{Message: detail}
+	case contains(detail, "Model not found"):
+		return &ModelNotFoundError{Message: detail}
+	default:
+		return &APIError{Message: detail, StatusCode: statusCode}
+	}
+}
+
 // GetHealth returns the health status.
 func (c *Client) GetHealth() (map[string]interface{}, error) {
 	healthURL := trimSuffix(c.BaseURL, "/api") + "/health"
@@ -191,6 +218,96 @@ func (s *UsageService) Stats() (*UsageStats, error) {
 	}
 	var result UsageStats
 	return &result, json.Unmarshal(data, &result)
+}
+
+type FilesService struct{ client *Client }
+
+func (s *FilesService) Upload(filePath string) (map[string]interface{}, error) {
+	file, err := os.Open(filePath)
+	if err != nil {
+		return nil, &APIError{Message: fmt.Sprintf("failed to open file: %v", err)}
+	}
+	defer file.Close()
+
+	var buf bytes.Buffer
+	writer := multipart.NewWriter(&buf)
+	part, err := writer.CreateFormFile("file", filePath)
+	if err != nil {
+		return nil, &APIError{Message: fmt.Sprintf("failed to create form file: %v", err)}
+	}
+	if _, err = io.Copy(part, file); err != nil {
+		return nil, &APIError{Message: fmt.Sprintf("failed to copy file: %v", err)}
+	}
+	_ = writer.WriteField("process", "false")
+	writer.Close()
+
+	req, err := http.NewRequest("POST", s.client.BaseURL+"/v1/files/", &buf)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Authorization", "Bearer "+s.client.APIKey)
+	req.Header.Set("Content-Type", writer.FormDataContentType())
+
+	resp, err := s.client.HTTPClient.Do(req)
+	if err != nil {
+		return nil, &APIError{Message: fmt.Sprintf("connection error: %v", err)}
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+
+	if resp.StatusCode == 200 {
+		var result map[string]interface{}
+		return result, json.Unmarshal(body, &result)
+	}
+	return nil, s.client.parseError(resp.StatusCode, body)
+}
+
+func (s *FilesService) List() ([]map[string]interface{}, error) {
+	data, err := s.client.do("GET", "/v1/files/", nil)
+	if err != nil {
+		return nil, err
+	}
+	var result []map[string]interface{}
+	return result, json.Unmarshal(data, &result)
+}
+
+func (s *FilesService) Get(fileID string) (map[string]interface{}, error) {
+	data, err := s.client.do("GET", "/v1/files/"+fileID, nil)
+	if err != nil {
+		return nil, err
+	}
+	var result map[string]interface{}
+	return result, json.Unmarshal(data, &result)
+}
+
+func (s *FilesService) GetContent(fileID string) ([]byte, error) {
+	req, err := http.NewRequest("GET", s.client.BaseURL+"/v1/files/"+fileID+"/content", nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Authorization", "Bearer "+s.client.APIKey)
+	resp, err := s.client.HTTPClient.Do(req)
+	if err != nil {
+		return nil, &APIError{Message: fmt.Sprintf("connection error: %v", err)}
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	if resp.StatusCode == 200 {
+		return body, nil
+	}
+	return nil, s.client.parseError(resp.StatusCode, body)
+}
+
+func (s *FilesService) Delete(fileID string) (map[string]interface{}, error) {
+	data, err := s.client.do("DELETE", "/v1/files/"+fileID, nil)
+	if err != nil {
+		return nil, err
+	}
+	var result map[string]interface{}
+	if len(data) == 0 {
+		return map[string]interface{}{"status": "deleted", "id": fileID}, nil
+	}
+	return result, json.Unmarshal(data, &result)
 }
 
 // --- Types ---
