@@ -41,11 +41,7 @@ func main() {
 	if len(c3) > 100 { c3 = c3[:100] }
 	fmt.Println("AI says:", c3)
 
-	fmt.Println("\n=== Test 4: MeeJudge ===")
-	st, _ := c.Judge.Status()
-	fmt.Println("Judge: enabled=", st["enabled"], "model=", st["model"])
-
-	fmt.Println("\n=== Test 5: Credits ===")
+	fmt.Println("\n=== Test 4: Credits ===")
 	credits, _ := c.Usage.Credits()
 	fmt.Printf("Balance: EUR%.2f\n", credits.CreditBalance)
 

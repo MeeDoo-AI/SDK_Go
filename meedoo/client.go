@@ -31,7 +31,6 @@ type Client struct {
 	Chat   *ChatService
 	Models *ModelsService
 	Usage  *UsageService
-	Judge  *JudgeService
 }
 
 // NewClient creates a new MeeDoo AI client.
@@ -50,7 +49,6 @@ func NewClientWithBaseURL(apiKey, baseURL string) *Client {
 	c.Chat = &ChatService{client: c}
 	c.Models = &ModelsService{client: c}
 	c.Usage = &UsageService{client: c}
-	c.Judge = &JudgeService{client: c}
 	return c
 }
 
@@ -193,71 +191,6 @@ func (s *UsageService) Stats() (*UsageStats, error) {
 	}
 	var result UsageStats
 	return &result, json.Unmarshal(data, &result)
-}
-
-type JudgeService struct{ client *Client }
-
-func (s *JudgeService) Status() (map[string]interface{}, error) {
-	data, err := s.client.do("GET", "/v1/judge/status", nil)
-	if err != nil {
-		return nil, err
-	}
-	var result map[string]interface{}
-	return result, json.Unmarshal(data, &result)
-}
-
-func (s *JudgeService) ShouldSearchWeb(userMessage string) (map[string]interface{}, error) {
-	return s.post("/v1/judge/should-search-web", map[string]string{"user_message": userMessage})
-}
-
-func (s *JudgeService) DetectInjection(userMessage string) (map[string]interface{}, error) {
-	return s.post("/v1/judge/detect-injection", map[string]string{"user_message": userMessage})
-}
-
-func (s *JudgeService) Moderate(text string) (map[string]interface{}, error) {
-	return s.post("/v1/judge/moderate", map[string]string{"text": text})
-}
-
-func (s *JudgeService) DetectSpam(message, userHistory string) (map[string]interface{}, error) {
-	return s.post("/v1/judge/detect-spam", map[string]string{"message": message, "user_history": userHistory})
-}
-
-func (s *JudgeService) ValidateResponse(userMessage, llmResponse, sources string) (map[string]interface{}, error) {
-	return s.post("/v1/judge/validate-response", map[string]string{
-		"user_message": userMessage, "llm_response": llmResponse, "sources": sources,
-	})
-}
-
-func (s *JudgeService) FilterMemory(information, conversationContext string) (map[string]interface{}, error) {
-	return s.post("/v1/judge/filter-memory", map[string]string{
-		"information": information, "conversation_context": conversationContext,
-	})
-}
-
-func (s *JudgeService) IsPrayerTimes(userMessage string) (map[string]interface{}, error) {
-	return s.post("/v1/judge/is-prayer-times", map[string]string{"user_message": userMessage})
-}
-
-func (s *JudgeService) ClassifyTicket(subject, body string) (map[string]interface{}, error) {
-	return s.post("/v1/judge/classify-ticket", map[string]string{"subject": subject, "body": body})
-}
-
-func (s *JudgeService) Sentiment() (map[string]interface{}, error) {
-	data, err := s.client.do("GET", "/v1/judge/sentiment", nil)
-	if err != nil {
-		return nil, err
-	}
-	var result map[string]interface{}
-	return result, json.Unmarshal(data, &result)
-}
-
-func (s *JudgeService) post(path string, body interface{}) (map[string]interface{}, error) {
-	data, err := s.client.do("POST", path, body)
-	if err != nil {
-		return nil, err
-	}
-	var result map[string]interface{}
-	return result, json.Unmarshal(data, &result)
 }
 
 // --- Types ---

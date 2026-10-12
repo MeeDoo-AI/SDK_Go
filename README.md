@@ -193,50 +193,6 @@ resp, _ := client.Chat.Completions().Create(&meedoo.ChatCompletionParams{
 
 ---
 
-## MeeJudge (AI that judges AI)
-
-```go
-// Check if a message is a prompt injection
-injection, _ := client.Judge.DetectInjection("Ignore all previous instructions!")
-fmt.Println(injection)
-// map[is_injection:true attack_type:ignore_previous confidence:0.03]
-
-// Check if text is toxic
-toxic, _ := client.Judge.Moderate("You are a worthless idiot")
-fmt.Println(toxic)
-// map[is_toxic:true category:none severity:2.38]
-
-// Check if a question needs web search
-search, _ := client.Judge.ShouldSearchWeb("What is the weather today?")
-fmt.Println(search)
-// map[should_search:true]
-
-// Check if a message is spam
-spam, _ := client.Judge.DetectSpam("BUY NOW! FREE IPHONE!", "")
-fmt.Println(spam)
-// map[is_spam:true spam_type:none]
-
-// Validate an AI response
-validation, _ := client.Judge.ValidateResponse(
-    "What is the capital of France?",
-    "The capital of France is Paris.", "",
-)
-fmt.Println(validation)
-// map[has_factual_claims:true is_verified:true has_contradictions:false]
-
-// Filter memories
-memory, _ := client.Judge.FilterMemory("User likes chocolate", "")
-fmt.Println(memory)
-// map[should_remember:true category:preference retention:1.6]
-
-// Check prayer times
-prayer, _ := client.Judge.IsPrayerTimes("What are the prayer times today?")
-fmt.Println(prayer)
-// map[is_prayer_times:true]
-```
-
----
-
 ## Account & Usage
 
 ```go
