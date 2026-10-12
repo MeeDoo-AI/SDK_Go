@@ -2,14 +2,20 @@
 
 > Add AI to your Go application. No AI experience needed.
 
+[![GitHub](https://img.shields.io/badge/GitHub-MeeDoo--AI%2FSDK_Go-blue)](https://github.com/MeeDoo-AI/SDK_Go)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Go 1.22+](https://img.shields.io/badge/Go-1.22+-00ADD8.svg)](https://golang.org)
+
 ## What is this?
 
 MeeDoo is an AI platform (like ChatGPT, but yours). This SDK lets you talk to MeeDoo's AI from your Go code.
 
+**GitHub**: https://github.com/MeeDoo-AI/SDK_Go
+
 ## Installation
 
 ```bash
-go get meedoo-ai/meedoo
+go get github.com/MeeDoo-AI/SDK_Go/meedoo
 ```
 
 ## Getting Started (3 minutes)

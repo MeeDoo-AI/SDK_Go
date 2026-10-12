@@ -8,6 +8,8 @@
 //	    Messages: []meedoo.Message{{Role: "user", Content: "Hello!"}},
 //	})
 //	fmt.Println(resp.Content())
+//
+// Install: go get github.com/MeeDoo-AI/SDK_Go
 package meedoo
 
 import (

@@ -2,6 +2,6 @@ FROM golang:1.22-bookworm
 WORKDIR /app
 COPY go.mod ./
 COPY meedoo/ ./meedoo/
-COPY main_run.go ./
-RUN go mod tidy && go build -o test_app .
+COPY cmd/ ./cmd/
+RUN go build -o test_app ./cmd/
 CMD ["./test_app"]

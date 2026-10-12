@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	meedoo "meedoo-ai/meedoo"
+	meedoo "github.com/MeeDoo-AI/SDK_Go/meedoo"
 )
 
 var (
